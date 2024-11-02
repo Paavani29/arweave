@@ -1,49 +1,38 @@
 async function uploadFile() {
-    const fileInput = document.getElementById("fileInput");
-    const uploadButton = document.getElementById("uploadButton");
-    const loadingMessage = document.getElementById("loadingMessage");
-    const linkMessage = document.getElementById("linkMessage");
-    const fileLink = document.getElementById("fileLink");
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
 
-    // Check if a file has been selected
-    if (fileInput.files.length === 0) {
-        alert("Please select a file first.");
+    if (!file) {
+        alert("Please select a file to upload.");
         return;
     }
 
-    // Get the selected file
-    const file = fileInput.files[0];
-
-    // Display loading message and disable the button
-    loadingMessage.style.display = "block";
-    uploadButton.disabled = true;
-
-    // Prepare the form data for the backend
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
+
+    document.getElementById('loadingMessage').style.display = 'block'; // Show loading message
 
     try {
-        // Send file to the backend
-        const response = await fetch("http://localhost:3000/upload", { // Change to your deployed backend URL later
-            method: "POST",
-            body: formData
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
         });
 
-        if (response.ok) {
-            const result = await response.json();
-            // Hide loading message, display link, and enable the button
-            loadingMessage.style.display = "none";
-            linkMessage.style.display = "block";
-            fileLink.href = result.link; // Assuming your backend returns { link: <url> }
-            fileLink.textContent = result.link;
-        } else {
-            alert("File upload failed. Please try again.");
+        if (!response.ok) {
+            throw new Error('File upload failed');
         }
+
+        const data = await response.json();
+        document.getElementById('loadingMessage').style.display = 'none'; // Hide loading message
+        document.getElementById('linkMessage').style.display = 'block'; // Show link message
+
+        // Update the link with the full URL and display it
+        const fileLinkElement = document.getElementById('fileLink');
+        fileLinkElement.href = data.link; // Set the link to the uploaded file
+        fileLinkElement.textContent = data.link; // Set the text content to the full URL
     } catch (error) {
-        console.error("Error uploading file:", error);
-        alert("An error occurred. Please try again.");
-    } finally {
-        // Reset UI state
-        uploadButton.disabled = false;
+        console.error('Error:', error);
+        alert('File upload failed. Please try again.');
+        document.getElementById('loadingMessage').style.display = 'none'; // Hide loading message
     }
 }
